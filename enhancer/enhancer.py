@@ -1,9 +1,18 @@
 import os
+import sys
+import types
 import torch
 from tqdm import tqdm
 import cv2
 import requests
 
+# -------------------------------------------------------------------
+# Monkey-patch basicsr.utils.diffjpeg to avoid import-time numpy errors
+# -------------------------------------------------------------------
+# Create a dummy module for basicsr.utils.diffjpeg before it's imported
+sys.modules['basicsr.utils.diffjpeg'] = types.ModuleType('basicsr.utils.diffjpeg')
+
+# -------------------------------------------------------------------
 def download_model_if_not_exists(url: str, dst_path: str):
     """Download a file from `url` to `dst_path` if it doesn't already exist."""
     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
@@ -17,7 +26,7 @@ def download_model_if_not_exists(url: str, dst_path: str):
                     f.write(chunk)
         print("✅ Download complete.")
 
-
+# -------------------------------------------------------------------
 class Enhancer:
     def __init__(self, method='gfpgan', background_enhancement=True, upscale=2):
         # -----------------------------
@@ -88,7 +97,6 @@ class Enhancer:
             self.arch = 'clean'
             self.channel_multiplier = 2
             self.model_name = 'GFPGANv1.4'
-            # we’ll ignore the original GitHub URL and use GDrive
             self.model_url = (
                 'https://drive.google.com/uc?export=download'
                 '&id=1Cw1Hx5m4b861xXsrP79-M26Zn6q9tmV7'
@@ -119,19 +127,11 @@ class Enhancer:
         os.makedirs(weights_dir, exist_ok=True)
         local_model_path = os.path.join(weights_dir, self.model_name + '.pth')
 
-        # Only download from GDrive if using GFPGANv1.4
-        if self.model_name == 'GFPGANv1.4':
-            download_model_if_not_exists(self.model_url, local_model_path)
-            model_path = local_model_path
-        else:
-            # fallback for other model versions
-            if os.path.isfile(local_model_path):
-                model_path = local_model_path
-            else:
-                model_path = self.model_url
+        download_model_if_not_exists(self.model_url, local_model_path)
+        model_path = local_model_path
 
         # -----------------------------
-        # 4. Lazy-import and instantiate
+        # 4. Lazy-import and instantiate GFPGANer
         # -----------------------------
         from gfpgan import GFPGANer
         self.restorer = GFPGANer(
@@ -151,9 +151,7 @@ class Enhancer:
         return True
 
     def enhance(self, image):
-        # Convert RGB→BGR
         img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-
         if self.check_image_dimensions(img):
             _, _, result = self.restorer.enhance(
                 img,
@@ -163,6 +161,4 @@ class Enhancer:
             )
         else:
             result = img
-
-        # Convert BGR→RGB
         return cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
