@@ -1,10 +1,17 @@
 import os
+import sys
 
+# Fix environment: make sure user site-packages are visible
+user_site = os.path.expanduser("~/.local/lib/python3.10/site-packages")
+if user_site not in sys.path:
+    sys.path.insert(0, user_site)
 
-import io
+# Reinstall numpy forcibly in user scope
+os.system("pip install --user --force-reinstall --no-cache-dir numpy==1.23.5")
+
+import numpy as np
 import streamlit as st
 from PIL import Image
-import numpy as np
 from enhancer.enhancer import Enhancer
 
 # --- Page config ---
