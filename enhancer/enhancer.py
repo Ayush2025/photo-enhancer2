@@ -5,6 +5,8 @@ import os
 import sys
 import types
 import torch
+from gfpgan.gfpganer import GFPGANer
+
 from tqdm import tqdm
 import cv2
 import requests
