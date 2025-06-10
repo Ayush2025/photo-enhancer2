@@ -1,5 +1,5 @@
 import os
-os.system("pip uninstall -y numpy && pip install numpy==1.23.5")
+
 
 import io
 import streamlit as st
