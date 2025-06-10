@@ -1,8 +1,7 @@
-basicsr @ git+https://github.com/XPixelGroup/BasicSR@master
 facexlib>=0.2.5
 gfpgan>=1.3.5
 numpy
-opencv-python
+opencv-python-headless
 Pillow
 torch>=1.7
 torchvision
