@@ -1,14 +1,13 @@
-# Use official Git version of basicsr
 basicsr @ git+https://github.com/XPixelGroup/BasicSR@master
-gfpgan
-facexlib
-opencv-python
+facexlib>=0.2.5
+gfpgan>=1.3.5
 numpy
+opencv-python
 Pillow
-torch
+torch>=1.7
 torchvision
 tqdm
-fastapi
 uvicorn
+fastapi
 realesrgan
 streamlit
