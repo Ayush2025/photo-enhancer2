@@ -1,45 +1,17 @@
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'libs'))
-
 import os
-import sys
-import types
 import torch
-from gfpgan.gfpganer import GFPGANer
-
 from tqdm import tqdm
 import cv2
-import requests
+import gdown
 
-# -------------------------------------------------------------------
-# Monkey-patch basicsr.utils.diffjpeg to avoid import-time numpy errors
-# -------------------------------------------------------------------
-# Create a dummy module for basicsr.utils.diffjpeg before it's imported
-sys.modules['basicsr.utils.diffjpeg'] = types.ModuleType('basicsr.utils.diffjpeg')
-
-# -------------------------------------------------------------------
-def download_model_if_not_exists(url: str, dst_path: str):
-    """Download a file from `url` to `dst_path` if it doesn't already exist."""
-    os.makedirs(os.path.dirname(dst_path), exist_ok=True)
-    if not os.path.isfile(dst_path):
-        print(f"📥 Downloading model from {url} to {dst_path}...")
-        resp = requests.get(url, stream=True)
-        resp.raise_for_status()
-        with open(dst_path, "wb") as f:
-            for chunk in resp.iter_content(chunk_size=8192):
-                if chunk:
-                    f.write(chunk)
-        print("✅ Download complete.")
-
-# -------------------------------------------------------------------
 class Enhancer:
     def __init__(self, method='gfpgan', background_enhancement=True, upscale=2):
         # -----------------------------
-        # 1. Background enhancement
+        # 1. Background enhancement setup
         # -----------------------------
         if background_enhancement:
             if upscale == 2:
-                if not torch.cuda.is_available():  # CPU
+                if not torch.cuda.is_available():
                     import warnings
                     warnings.warn(
                         'CPU RealESRGAN is very slow. Skipping background upsampling.'
@@ -48,9 +20,11 @@ class Enhancer:
                 else:
                     from basicsr.archs.rrdbnet_arch import RRDBNet
                     from realesrgan import RealESRGANer
+
                     model = RRDBNet(
-                        num_in_ch=3, num_out_ch=3, num_feat=64,
-                        num_block=23, num_grow_ch=32, scale=2
+                        num_in_ch=3, num_out_ch=3,
+                        num_feat=64, num_block=23,
+                        num_grow_ch=32, scale=2
                     )
                     self.bg_upsampler = RealESRGANer(
                         scale=2,
@@ -74,9 +48,11 @@ class Enhancer:
                 else:
                     from basicsr.archs.rrdbnet_arch import RRDBNet
                     from realesrgan import RealESRGANer
+
                     model = RRDBNet(
-                        num_in_ch=3, num_out_ch=3, num_feat=64,
-                        num_block=23, num_grow_ch=32, scale=4
+                        num_in_ch=3, num_out_ch=3,
+                        num_feat=64, num_block=23,
+                        num_grow_ch=32, scale=4
                     )
                     self.bg_upsampler = RealESRGANer(
                         scale=4,
@@ -96,51 +72,53 @@ class Enhancer:
             self.bg_upsampler = None
 
         # -----------------------------
-        # 2. Face enhancement settings
+        # 2. GFPGAN settings
         # -----------------------------
         if method == 'gfpgan':
             self.arch = 'clean'
             self.channel_multiplier = 2
             self.model_name = 'GFPGANv1.4'
-            self.model_url = (
-                'https://drive.google.com/uc?export=download'
-                '&id=1Cw1Hx5m4b861xXsrP79-M26Zn6q9tmV7'
-            )
+            # your Google Drive file ID
+            self.drive_id = "1Cw1Hx5m4b861xXsrP79-M26Zn6q9tmV7"
         elif method == 'RestoreFormer':
             self.arch = 'RestoreFormer'
             self.channel_multiplier = 2
             self.model_name = 'RestoreFormer'
-            self.model_url = (
-                'https://github.com/TencentARC/GFPGAN/'
-                'releases/download/v1.3.4/RestoreFormer.pth'
-            )
+            self.drive_id = None  # you could swap in a different download link
         elif method == 'codeformer':
             self.arch = 'CodeFormer'
             self.channel_multiplier = 2
             self.model_name = 'CodeFormer'
-            self.model_url = (
-                'https://github.com/sczhou/CodeFormer/'
-                'releases/download/v0.1.0/codeformer.pth'
-            )
+            self.drive_id = None
         else:
             raise ValueError(f'Wrong model version {method}.')
 
-        # --------------------------------------------
-        # 3. Ensure the GFPGAN model weights are present
-        # --------------------------------------------
+        # ---------------------------------------------------
+        # 3. Ensure the GFPGAN model is present locally:
+        #    - if drive_id set, download from Google Drive
+        #    - otherwise fallback to self.url or local checkpoint
+        # ---------------------------------------------------
         weights_dir = os.path.join('gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
-        local_model_path = os.path.join(weights_dir, self.model_name + '.pth')
 
-        download_model_if_not_exists(self.model_url, local_model_path)
-        model_path = local_model_path
+        local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
-        # -----------------------------
-        # 4. Lazy-import and instantiate GFPGANer
-        # -----------------------------
+        if self.drive_id:
+            # Download if missing
+            if not os.path.isfile(local_path):
+                print(f"Downloading {self.model_name} from Google Drive...")
+                url = f"https://drive.google.com/uc?id={self.drive_id}"
+                gdown.download(url, local_path, quiet=False)
+        else:
+            # you could implement other logic here (e.g. use self.url)
+            pass
+
+        # ---------------------------------------------------
+        # 4. Lazy-import GFPGANer and create restorer
+        # ---------------------------------------------------
         from gfpgan import GFPGANer
         self.restorer = GFPGANer(
-            model_path=model_path,
+            model_path=local_path,
             upscale=upscale,
             arch=self.arch,
             channel_multiplier=self.channel_multiplier,
@@ -148,22 +126,25 @@ class Enhancer:
         )
 
     def check_image_dimensions(self, image):
-        height, width, _ = image.shape
-        if width > 2048 or height > 2048:
-            print("Image dimensions exceed 2048 pixels.")
+        h, w, _ = image.shape
+        if w > 2048 or h > 2048:
+            print("Image dimensions exceed 2048px; skipping face enhancement.")
             return False
-        print("Image dimensions are within the limit.")
         return True
 
     def enhance(self, image):
-        img = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        if self.check_image_dimensions(img):
-            _, _, result = self.restorer.enhance(
-                img,
+        # Convert RGB → BGR
+        bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+        if self.check_image_dimensions(bgr):
+            _, _, output = self.restorer.enhance(
+                bgr,
                 has_aligned=False,
                 only_center_face=False,
                 paste_back=True
             )
         else:
-            result = img
-        return cv2.cvtColor(result, cv2.COLOR_BGR2RGB)
+            output = bgr
+
+        # Convert BGR → RGB
+        return cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
