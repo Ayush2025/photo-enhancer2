@@ -3,6 +3,8 @@ import torch
 from tqdm import tqdm
 import cv2
 import gdown
+from gfpgan.gfpganer import GFPGANer
+
 
 class Enhancer:
     def __init__(self, method='gfpgan', background_enhancement=True, upscale=2):
