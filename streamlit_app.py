@@ -1,48 +1,60 @@
+import os
+import sys
+# Ensure enhancer package can be found
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import io
 import numpy as np
-from PIL import Image
 import streamlit as st
-from enhancer.enhancer import Enhancer
+from PIL import Image
 
-# --- Must be first Streamlit call ---
+# --- Diagnostics: confirm imports ---
+# Must set page config before any other Streamlit call
 st.set_page_config(
     page_title="FRIDAY AI Photo Enhancer",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="expanded",
 )
 
+# Attempt to import Enhancer
+try:
+    from enhancer.enhancer import Enhancer
+    st.write("✅ Enhancer module loaded successfully.")
+except Exception as e:
+    st.error(f"❌ Failed to import Enhancer: {e}")
+    st.stop()
+
 # --- App Header ---
 st.title("👩‍🎨 FRIDAY AI Photo Enhancer")
-st.write("Enhance portraits and backgrounds in your images with state-of-the-art AI models.")
+st.write("Enhance portraits and backgrounds using AI-driven models.")
 
 # --- Sidebar Controls ---
 st.sidebar.header("Settings")
 method_label = st.sidebar.selectbox(
     "Enhancement Method",
-    ("Portrait Retouch", "Advanced Restoration")
+    ["Portrait Retouch", "Advanced Restoration"]
 )
 method = "gfpgan" if method_label == "Portrait Retouch" else "RestoreFormer"
 bg_enhance = st.sidebar.checkbox("Background Enhancement", value=True)
-upscale = st.sidebar.radio("Upscale Factor", [1, 2, 4], index=1)
+upscale = st.sidebar.selectbox("Upscale Factor", [1, 2, 4], index=1)
+
 st.sidebar.markdown("---")
-st.sidebar.write("Made by **Ayush**")
+st.sidebar.write("Built by **Ayush**")
 
 # --- File Uploader ---
-uploaded_file = st.file_uploader("📂 Upload an image", type=["jpg", "jpeg", "png"])
-if not uploaded_file:
-    st.info("Please upload a JPG/PNG image to get started.")
+uploaded = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
+if not uploaded:
+    st.info("Please upload an image to get started.")
     st.stop()
 
-# --- Load Image ---
+# --- Load and display original image ---
 try:
-    original_image = Image.open(uploaded_file).convert("RGB")
+    original = Image.open(uploaded).convert("RGB")
+    st.subheader("Original Image")
+    st.image(original, use_column_width=True)
 except Exception as e:
-    st.error(f"Could not read image file: {e}")
+    st.error(f"Error loading image: {e}")
     st.stop()
-
-# --- Show Original ---
-st.subheader("Original")
-st.image(original_image, use_column_width=True)
 
 # --- Initialize Enhancer ---
 try:
@@ -51,44 +63,45 @@ try:
         background_enhancement=bg_enhance,
         upscale=upscale
     )
+    st.write(f"✅ Using method: {method_label}")
 except Exception as e:
-    st.error(f"Failed to initialize enhancer: {e}")
+    st.error(f"Failed to initialize Enhancer: {e}")
     st.stop()
 
-# --- Perform Enhancement ---
-with st.spinner("🚀 Enhancing image..."):
+# --- Perform enhancement ---
+with st.spinner("Enhancing image, please wait..."):
     try:
-        result_np = enhancer.enhance(np.array(original_image))
-        enhanced_image = Image.fromarray(result_np)
+        enhanced_np = enhancer.enhance(np.array(original))
+        enhanced = Image.fromarray(enhanced_np)
     except Exception as e:
         st.error(f"Enhancement error: {e}")
         st.stop()
 
-# --- Display Side by Side ---
+# --- Show comparison ---
 st.subheader("Comparison")
 col1, col2 = st.columns(2)
 with col1:
-    st.image(original_image, caption="Original")
+    st.image(original, caption="Original", use_column_width=True)
 with col2:
-    st.image(enhanced_image, caption="Enhanced")
+    st.image(enhanced, caption="Enhanced", use_column_width=True)
 
-# --- Download Button ---
-buf = io.BytesIO()
-enhanced_image.save(buf, format="PNG")
+# --- Download button ---
+buffer = io.BytesIO()
+enhanced.save(buffer, format="PNG")
 st.download_button(
-    label="⬇️ Download Enhanced Image",
-    data=buf.getvalue(),
+    label="Download Enhanced Image",
+    data=buffer.getvalue(),
     file_name="friday_enhanced.png",
     mime="image/png",
-    key="download_enhanced"
+    key="download_img"
 )
 
-# --- Method Description ---
+# --- Method details ---
 if method == "gfpgan":
-    st.markdown("**Portrait Retouch** smooths skin and sharpens facial features while retaining a natural look.")
+    st.info("Portrait Retouch: Smooth skin, sharpen features while keeping a natural look.")
 else:
-    st.markdown("**Advanced Restoration** recovers fine details, removes artifacts, and restores clarity.")
+    st.info("Advanced Restoration: Recover fine details and remove artifacts.")
 
 # --- Footer ---
 st.markdown("---")
-st.write("Built with ❤ using Streamlit and GFPGAN/RealESRGAN")
+st.write("Powered by Streamlit, GFPGAN & RealESRGAN")
