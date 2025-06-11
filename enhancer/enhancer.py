@@ -37,7 +37,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=2,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'
+                            'https://github.com/xinntao/Real-ESRGAN/'  
                             'releases/download/v0.2.1/RealESRGAN_x2plus.pth'
                         ),
                         model=model,
@@ -65,7 +65,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=4,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'
+                            'https://github.com/xinntao/Real-ESRGAN/'  
                             'releases/download/v0.1.0/RealESRGAN_x4plus.pth'
                         ),
                         model=model,
@@ -101,18 +101,32 @@ class Enhancer:
             raise ValueError(f'Wrong model version {method}.')
 
         # ---------------------------------------------------
-        # 3. Ensure the GFPGAN model is present locally:
+        # 3. Ensure the GFPGAN model is present locally or via URL
         # ---------------------------------------------------
         weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
 
+        # Default to local file
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
+        # If a Google Drive ID is provided, download locally
         if self.drive_id:
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from Google Drive...")
                 url = f"https://drive.google.com/uc?id={self.drive_id}"
                 gdown.download(url, local_path, quiet=False)
+        else:
+            # Use official GitHub release URLs for RestoreFormer and CodeFormer
+            if self.model_name == 'RestoreFormer':
+                local_path = (
+                    'https://github.com/TencentARC/GFPGAN/'
+                    'releases/download/v1.3.4/RestoreFormer.pth'
+                )
+            elif self.model_name == 'CodeFormer':
+                local_path = (
+                    'https://github.com/TencentARC/GFPGAN/'
+                    'releases/download/v1.3.4/CodeFormer.pth'
+                )
 
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
