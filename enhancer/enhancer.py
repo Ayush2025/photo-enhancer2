@@ -101,24 +101,41 @@ class Enhancer:
             raise ValueError(f'Wrong model version {method}.')
 
         # ---------------------------------------------------
-        # 3. Ensure the GFPGAN model is present locally:
+        # 3. Ensure the GFPGAN model is present locally or via URL
         # ---------------------------------------------------
         weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
 
+        # by default point to a local file
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
         if self.drive_id:
+            # download GFPGANv1.4 from Drive if missing
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from Google Drive...")
                 url = f"https://drive.google.com/uc?id={self.drive_id}"
                 gdown.download(url, local_path, quiet=False)
+            model_path = local_path
+        else:
+            # for RestoreFormer & CodeFormer use official GitHub release URLs
+            if self.model_name == 'RestoreFormer':
+                model_path = (
+                    'https://github.com/TencentARC/GFPGAN/'
+                    'releases/download/v1.3.4/RestoreFormer.pth'
+                )
+            elif self.model_name == 'CodeFormer':
+                model_path = (
+                    'https://github.com/TencentARC/GFPGAN/'
+                    'releases/download/v1.3.4/CodeFormer.pth'
+                )
+            else:
+                model_path = local_path
 
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
         # ---------------------------------------------------
         self.restorer = GFPGANer(
-            model_path=local_path,
+            model_path=model_path,
             upscale=upscale,
             arch=self.arch,
             channel_multiplier=self.channel_multiplier,
