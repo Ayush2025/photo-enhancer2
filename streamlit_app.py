@@ -64,7 +64,7 @@ method = st.sidebar.selectbox(
     "Enhancement Method", 
     [
         ("Portrait Retouch", "gfpgan"),
-        ("Advanced Restoration", "RestoreFormer")
+        ("Advanced Restoration", "RestoreFormer"),
     ], 
     format_func=lambda x: x[0]
 )
@@ -79,7 +79,7 @@ if uploaded:
     img_np = np.array(Image.open(uploaded))
     enhance_key = method[1]
 
-    # Initialize Enhancer with error handling
+    # Initialize Enhancer
     try:
         enhancer = Enhancer(
             method=enhance_key,
@@ -102,49 +102,15 @@ if uploaded:
         st.subheader("Enhanced 🚀")
         st.image(out_img, width=width)
 
+    # Download button with unique key
     buf = io.BytesIO()
     out_img.save(buf, format="PNG")
-    btn = st.download_button(
-        
-        "⬇️ Download Enhanced Image",
-        data=buf.getvalue(,
-        key="download_btn"
-    ),
-        file_name="FRIDAY_enhanced.png",
-        mime="image/png"
-    )
-
-    # Method descriptions
-    if enhance_key == 'gfpgan':
-        st.info("**Portrait Retouch**: Smooths skin, sharpens facial features, keeps natural look.")
-    else:
-        st.info("**Advanced Restoration**: Recovers fine details, removes artifacts, restores old photos.")
-    img_np = np.array(Image.open(uploaded))
-    enhance_key = method[1]
-    enhancer = Enhancer(
-        method=enhance_key,
-        background_enhancement=bg_enhance,
-        upscale=upscale
-    )
-    with st.spinner("✨ Enhancing—please wait..."):
-        out_np = enhancer.enhance(img_np)
-    out_img = Image.fromarray(out_np)
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Original 🖼️")
-        st.image(uploaded, width=width)
-    with col2:
-        st.subheader("Enhanced 🚀")
-        st.image(out_img, width=width)
-
-    buf = io.BytesIO()
-    out_img.save(buf, format="PNG")
-    btn = st.download_button(
-        "⬇️ Download Enhanced Image",
+    st.download_button(
+        label="⬇️ Download Enhanced Image",
         data=buf.getvalue(),
         file_name="FRIDAY_enhanced.png",
-        mime="image/png"
+        mime="image/png",
+        key="download_btn"
     )
 
     # Method descriptions
