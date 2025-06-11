@@ -105,8 +105,11 @@ if uploaded:
     buf = io.BytesIO()
     out_img.save(buf, format="PNG")
     btn = st.download_button(
+        
         "⬇️ Download Enhanced Image",
-        data=buf.getvalue(),
+        data=buf.getvalue(,
+        key="download_btn"
+    ),
         file_name="FRIDAY_enhanced.png",
         mime="image/png"
     )
