@@ -11,7 +11,7 @@ from enhancer.enhancer import Enhancer
 
 # --- Must be first Streamlit call ---
 st.set_page_config(
-    page_title="FRIDAY ai image enhancer",
+    page_title="FRIDAY",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -49,7 +49,7 @@ st.markdown(
 )
 
 # --- App Header ---
-st.markdown("<div class='title'>FRIDAY ai image enhancer</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>FRIDAY</div>", unsafe_allow_html=True)
 st.write("Enhance portraits and backgrounds with next-gen AI.")
 
 # --- Sidebar Controls ---
