@@ -3,7 +3,11 @@ import torch
 from tqdm import tqdm
 import cv2
 import gdown
-from gfpgan.gfpganer import GFPGANer
+import sys
+sys.path.insert(0, './libs/gfpgan')
+sys.path.insert(0, './libs/basicsr')
+
+from gfpgan import GFPGANer
 
 
 class Enhancer:
