@@ -9,7 +9,7 @@ from PIL import Image
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from enhancer.enhancer import Enhancer
 
-# --- Must be first Streamlit call ---
+# --- Page Configuration ---
 st.set_page_config(
     page_title="FRIDAY",
     layout="wide",
@@ -26,9 +26,9 @@ st.markdown(
         background: linear-gradient(135deg, #2c3e50, #4ca1af);
         color: #fff;
         background-size: 400% 400%;
-        animation: gradient 20s ease infinite;
+        animation: gradientBG 20s ease infinite;
       }
-      @keyframes gradient {
+      @keyframes gradientBG {
         0% {background-position:0% 50%;}
         50% {background-position:100% 50%;}
         100% {background-position:0% 50%;}
@@ -44,6 +44,14 @@ st.markdown(
       .sidebar .sidebar-content {
         background-color: #1b1b2f;
       }
+      .enhance-btn button {
+        animation: pulse 2s ease infinite;
+      }
+      @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+      }
     </style>
     """, unsafe_allow_html=True
 )
@@ -54,7 +62,11 @@ st.write("Enhance portraits and backgrounds with next-gen AI.")
 
 # --- Sidebar Controls ---
 st.sidebar.header("Settings")
-method = st.sidebar.radio("Enhancement Method", ["Portrait Retouch", "Advanced Restoration"])
+method_label = st.sidebar.radio(
+    "Enhancement Method",
+    ["Portrait Retouch", "Advanced Restoration"]
+)
+method = "gfpgan" if method_label == "Portrait Retouch" else "RestoreFormer"
 bg_enhance = st.sidebar.checkbox("Background Enhancement", True)
 upscale = st.sidebar.selectbox("Upscale Factor", [1, 2, 4], index=1)
 width = st.sidebar.slider("Display Width", 100, 800, 400)
@@ -72,12 +84,16 @@ original = Image.open(uploaded).convert("RGB")
 st.subheader("Original Image")
 st.image(original, width=width, caption="Your upload")
 
-# --- Perform Enhancement ---
-if st.button("✨ Enhance Image"):
+# --- Animated Enhance Button ---
+st.markdown("<div class='enhance-btn'>", unsafe_allow_html=True)
+pressed = st.button("✨ Enhance Image", key="enhance_btn")
+st.markdown("</div>", unsafe_allow_html=True)
+
+if pressed:
     with st.spinner("Processing image..."):
         try:
             enhancer = Enhancer(
-                method="gfpgan" if method == "Portrait Retouch" else "RestoreFormer",
+                method=method,
                 background_enhancement=bg_enhance,
                 upscale=upscale
             )
@@ -107,7 +123,10 @@ if st.button("✨ Enhance Image"):
     )
 
     # --- Method Details ---
-    if method == "Portrait Retouch":
-        st.markdown("**Portrait Retouch**: Smooths skin, sharpens facial features while preserving natural look.")
+    if method == "gfpgan":
+        st.markdown("**Portrait Retouch**: Smooths skin and sharpens facial features while preserving natural look.")
     else:
         st.markdown("**Advanced Restoration**: Recovers fine details, removes artifacts, and restores clarity.")
+
+else:
+    st.info("Press the Enhance button above to begin!")
