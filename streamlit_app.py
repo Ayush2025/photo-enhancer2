@@ -23,7 +23,7 @@ st.markdown(
       body {
         margin: 0;
         padding: 0;
-        background: linear-gradient(135deg, #1e1e2e, #12121b);
+        background: linear-gradient(135deg, #2c3e50, #4ca1af);
         color: #fff;
         background-size: 400% 400%;
         animation: gradient 20s ease infinite;
