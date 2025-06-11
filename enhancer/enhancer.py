@@ -3,6 +3,7 @@ import torch
 from tqdm import tqdm
 import cv2
 import gdown
+import requests
 import sys
 
 # Add libraries to path
@@ -101,7 +102,7 @@ class Enhancer:
             raise ValueError(f'Wrong model version {method}.')
 
         # ---------------------------------------------------
-        # 3. Ensure the GFPGAN model is present locally or via URL
+        # 3. Ensure the GFPGAN model is present locally
         # ---------------------------------------------------
         weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
@@ -109,24 +110,33 @@ class Enhancer:
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
         if self.drive_id:
+            # download GFPGANv1.4 from Drive if missing
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from Google Drive...")
                 url = f"https://drive.google.com/uc?id={self.drive_id}"
                 gdown.download(url, local_path, quiet=False)
             model_path = local_path
         else:
+            # For RestoreFormer and CodeFormer, download manually to local_path
             if self.model_name == 'RestoreFormer':
-                model_path = (
+                url = (
                     'https://github.com/TencentARC/GFPGAN/'
                     'releases/download/v1.3.4/RestoreFormer.pth'
                 )
-            elif self.model_name == 'CodeFormer':
-                model_path = (
+            else:
+                url = (
                     'https://github.com/TencentARC/GFPGAN/'
                     'releases/download/v1.3.4/CodeFormer.pth'
                 )
-            else:
-                model_path = local_path
+            if not os.path.isfile(local_path):
+                print(f"Downloading {self.model_name} from GitHub...")
+                resp = requests.get(url, stream=True)
+                resp.raise_for_status()
+                with open(local_path, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+            model_path = local_path
 
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
