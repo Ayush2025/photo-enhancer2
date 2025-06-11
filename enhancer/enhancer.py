@@ -106,7 +106,7 @@ class Enhancer:
         weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
 
-        # by default point to a local file
+        # default to a local file path
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
         if self.drive_id:
@@ -136,6 +136,7 @@ class Enhancer:
         # ---------------------------------------------------
         self.restorer = GFPGANer(
             model_path=model_path,
+            model_rootpath=weights_dir,
             upscale=upscale,
             arch=self.arch,
             channel_multiplier=self.channel_multiplier,
