@@ -4,17 +4,21 @@ import os
 import numpy as np
 import streamlit as st
 from PIL import Image
-from enhancer.enhancer import Enhancer
 
-# --- Diagnostic Check ---
-st.write("✅ FRIDAY App Initialized")
-
-# --- Page config ---
+# --- First, page config must come before any other Streamlit calls ---
 st.set_page_config(
     page_title="FRIDAY - AI Photo Enhancer",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# --- Diagnostic import check ---
+try:
+    from enhancer.enhancer import Enhancer
+    st.write("✅ Imports successful")
+except Exception as e:
+    st.error(f"❌ Import error: {e}")
+    st.stop()
 
 # --- Hide default menu + footer ---
 st.markdown("""
@@ -79,8 +83,13 @@ st.sidebar.markdown("Made by **Ayush** 💡")
 
 # --- Main logic ---
 if uploaded:
-    img = Image.open(uploaded)
-    img_np = np.array(img)
+    try:
+        img = Image.open(uploaded)
+        img_np = np.array(img)
+    except Exception as e:
+        st.error(f"Error reading the uploaded image: {e}")
+        st.stop()
+
     enhance_key = method[1]
 
     # Initialize Enhancer
@@ -115,14 +124,17 @@ if uploaded:
 
     # Download button
     buf = io.BytesIO()
-    out_img.save(buf, format="PNG")
-    st.download_button(
-        label="⬇️ Download Enhanced Image",
-        data=buf.getvalue(),
-        file_name="FRIDAY_enhanced.png",
-        mime="image/png",
-        key="download_btn"
-    )
+    try:
+        out_img.save(buf, format="PNG")
+        st.download_button(
+            label="⬇️ Download Enhanced Image",
+            data=buf.getvalue(),
+            file_name="FRIDAY_enhanced.png",
+            mime="image/png",
+            key="download_btn"
+        )
+    except Exception as e:
+        st.error(f"Download error: {e}")
 
     # Method descriptions
     if enhance_key == 'gfpgan':
