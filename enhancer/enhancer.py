@@ -134,14 +134,14 @@ class Enhancer:
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
         # ---------------------------------------------------
-        self.restorer = GFPGANer(
-            model_path=model_path,
-            model_rootpath=weights_dir,
-            upscale=upscale,
-            arch=self.arch,
-            channel_multiplier=self.channel_multiplier,
-            bg_upsampler=self.bg_upsampler
-        )
+       self.restorer = GFPGANer(
+    model_path=model_path,
+    upscale=upscale,
+    arch=self.arch,
+    channel_multiplier=self.channel_multiplier,
+    bg_upsampler=self.bg_upsampler
+)
+
 
     def check_image_dimensions(self, image):
         h, w, _ = image.shape
