@@ -117,16 +117,18 @@ class Enhancer:
                 gdown.download(url, local_path, quiet=False)
         else:
             # Use official GitHub release URLs for RestoreFormer and CodeFormer
-            if self.model_name == 'RestoreFormer':
-                local_path = (
-                    'https://github.com/TencentARC/GFPGAN/'
-                    'releases/download/v1.3.4/RestoreFormer.pth'
-                )
-            elif self.model_name == 'CodeFormer':
-                local_path = (
-                    'https://github.com/TencentARC/GFPGAN/'
-                    'releases/download/v1.3.4/CodeFormer.pth'
-                )
+          if self.drive_id:
+    ...
+else:
+    if self.model_name == 'RestoreFormer':
+        local_path = (
+            'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
+        )
+    elif self.model_name == 'CodeFormer':
+        local_path = (
+            'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth'
+        )
+
 
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
