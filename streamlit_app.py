@@ -6,6 +6,9 @@ import streamlit as st
 from PIL import Image
 from enhancer.enhancer import Enhancer
 
+# --- Diagnostic Check ---
+st.write("✅ FRIDAY App Initialized")
+
 # --- Page config ---
 st.set_page_config(
     page_title="FRIDAY - AI Photo Enhancer",
