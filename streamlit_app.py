@@ -11,7 +11,7 @@ from enhancer.enhancer import Enhancer
 
 # --- Must be first Streamlit call ---
 st.set_page_config(
-    page_title="FRIDAY AI Photo Enhancer",
+    page_title="FRIDAY ai image enhancer",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -49,7 +49,7 @@ st.markdown(
 )
 
 # --- App Header ---
-st.markdown("<div class='title'>FRIDAY AI Photo Enhancer</div>", unsafe_allow_html=True)
+st.markdown("<div class='title'>FRIDAY ai image enhancer</div>", unsafe_allow_html=True)
 st.write("Enhance portraits and backgrounds with next-gen AI.")
 
 # --- Sidebar Controls ---
@@ -57,6 +57,7 @@ st.sidebar.header("Settings")
 method = st.sidebar.radio("Enhancement Method", ["Portrait Retouch", "Advanced Restoration"])
 bg_enhance = st.sidebar.checkbox("Background Enhancement", True)
 upscale = st.sidebar.selectbox("Upscale Factor", [1, 2, 4], index=1)
+width = st.sidebar.slider("Display Width", 100, 800, 400)
 st.sidebar.markdown("---")
 st.sidebar.write("Built by **Ayush** 💡")
 
@@ -69,7 +70,7 @@ if not uploaded:
 # --- Display Original ---
 original = Image.open(uploaded).convert("RGB")
 st.subheader("Original Image")
-st.image(original, use_column_width=True)
+st.image(original, width=width, caption="Your upload")
 
 # --- Perform Enhancement ---
 if st.button("✨ Enhance Image"):
@@ -90,9 +91,9 @@ if st.button("✨ Enhance Image"):
     st.subheader("Comparison")
     col1, col2 = st.columns(2)
     with col1:
-        st.image(original, caption="Original", use_column_width=True)
+        st.image(original, caption="Original", width=width)
     with col2:
-        st.image(enhanced, caption="Enhanced", use_column_width=True)
+        st.image(enhanced, caption="Enhanced", width=width)
 
     # --- Download Button ---
     buf = io.BytesIO()
