@@ -37,7 +37,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=2,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'  
+                            'https://github.com/xinntao/Real-ESRGAN/'
                             'releases/download/v0.2.1/RealESRGAN_x2plus.pth'
                         ),
                         model=model,
@@ -65,7 +65,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=4,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'  
+                            'https://github.com/xinntao/Real-ESRGAN/'
                             'releases/download/v0.1.0/RealESRGAN_x4plus.pth'
                         ),
                         model=model,
@@ -86,10 +86,10 @@ class Enhancer:
             self.arch = 'clean'
             self.channel_multiplier = 2
             self.model_name = 'GFPGANv1.4'
-            # official GFPGANv1.4 release
+            # official GFPGANv1.4 release from v1.3.4
             self.model_url = (
                 'https://github.com/TencentARC/GFPGAN/'
-                'releases/download/v1.3.8/GFPGANv1.4.pth'
+                'releases/download/v1.3.4/GFPGANv1.4.pth'
             )
         elif method == 'RestoreFormer':
             self.arch = 'RestoreFormer'
