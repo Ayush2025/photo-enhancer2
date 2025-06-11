@@ -1,107 +1,163 @@
-import os
-import sys
-# Ensure enhancer package can be found
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
 import io
-import numpy as np
 import streamlit as st
 from PIL import Image
+import numpy as np
+from enhancer.enhancer import Enhancer
 
-# --- Diagnostics: confirm imports ---
-# Must set page config before any other Streamlit call
+# --- Page config ---
 st.set_page_config(
-    page_title="FRIDAY AI Photo Enhancer",
+    page_title="FRIDAY - AI Photo Enhancer",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Attempt to import Enhancer
-try:
-    from enhancer.enhancer import Enhancer
-    st.write("✅ Enhancer module loaded successfully.")
-except Exception as e:
-    st.error(f"❌ Failed to import Enhancer: {e}")
-    st.stop()
+# --- Hide default menu + footer ---
+st.markdown("""
+<style>
+  #MainMenu, footer { visibility: hidden; }
+</style>
+""", unsafe_allow_html=True)
 
-# --- App Header ---
-st.title("👩‍🎨 FRIDAY AI Photo Enhancer")
-st.write("Enhance portraits and backgrounds using AI-driven models.")
+# --- Custom CSS (dark sidebar, animations, colors, animated background) ---
+st.markdown("""
+<style>
+  /* Animated page background */
+  body {
+    background: linear-gradient(135deg,
+      #ff9a9e 0%, #fad0c4 25%, #fad0c4 25%, #fbc2eb 50%, #a6c1ee 75%, #84fab0 100%
+    );
+    background-size: 600% 600%;
+    animation: gradientBG 20s ease infinite;
+  }
+  @keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 
-# --- Sidebar Controls ---
-st.sidebar.header("Settings")
-method_label = st.sidebar.selectbox(
-    "Enhancement Method",
-    ["Portrait Retouch", "Advanced Restoration"]
-)
-method = "gfpgan" if method_label == "Portrait Retouch" else "RestoreFormer"
-bg_enhance = st.sidebar.checkbox("Background Enhancement", value=True)
-upscale = st.sidebar.selectbox("Upscale Factor", [1, 2, 4], index=1)
+  /* Dark sidebar */
+  [data-testid="stSidebar"] {
+    background-color: #1e1e2e !important;
+    color: #ffffff;
+  }
 
+  /* Animated rainbow title */
+  @keyframes titleGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .title-anim {
+    font-size: 3rem;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(45deg,
+      #ff6ec4, #7873f5, #4ade80, #facc15, #fb7185
+    );
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: titleGradient 8s ease infinite;
+  }
+
+  /* Uploader box */
+  .stFileUploader > div {
+    border: 2px dashed #ff6ec4 !important;
+    border-radius: 0.75rem;
+    padding: 1rem !important;
+  }
+
+  /* Image cards */
+  .image-card {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    margin-bottom: 1rem;
+  }
+  .image-card-left { background: #FFFBCC; }
+  .image-card-right { background: #CCF0FF; }
+
+  /* Buttons */
+  .enhance-btn button,
+  .download-btn button {
+    color: #fff;
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  }
+  .enhance-btn button {
+    background-color: #f39c12;
+  }
+  .download-btn button {
+    background-color: #27ae60;
+  }
+  .enhance-btn button:hover,
+  .download-btn button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+  }
+</style>
+""", unsafe_allow_html=True)
+
+# --- Animated title ---
+st.markdown("<div class='title-anim'>FRIDAY</div>", unsafe_allow_html=True)
+st.markdown("### Next-gen AI Photo Enhancer")
+st.divider()
+
+# --- File uploader ---
+uploaded = st.file_uploader("📂 Upload an image", type=['png','jpg','jpeg'])
+
+# --- Sidebar controls ---
+st.sidebar.header("App Settings:")
+method = st.sidebar.selectbox("Method", ["gfpgan", "RestoreFormer", "codeformer"])
+bg_enhance = st.sidebar.selectbox("Background enhancement", ["True","False"])
+bg_enhance = True if bg_enhance=="True" else False
+upscale = st.sidebar.selectbox("Upscale factor", [2,4])
+width = st.sidebar.slider("Display width", 100, 600, 300)
 st.sidebar.markdown("---")
-st.sidebar.write("Built by **Ayush**")
+st.sidebar.markdown("Made by **Ayush**")
 
-# --- File Uploader ---
-uploaded = st.file_uploader("Upload an image", type=["jpg", "jpeg", "png"])
-if not uploaded:
-    st.info("Please upload an image to get started.")
-    st.stop()
-
-# --- Load and display original image ---
-try:
-    original = Image.open(uploaded).convert("RGB")
-    st.subheader("Original Image")
-    st.image(original, use_column_width=True)
-except Exception as e:
-    st.error(f"Error loading image: {e}")
-    st.stop()
-
-# --- Initialize Enhancer ---
-try:
+# --- Main logic ---
+if uploaded:
+    img_np = np.array(Image.open(uploaded))
     enhancer = Enhancer(
         method=method,
         background_enhancement=bg_enhance,
         upscale=upscale
     )
-    st.write(f"✅ Using method: {method_label}")
-except Exception as e:
-    st.error(f"Failed to initialize Enhancer: {e}")
-    st.stop()
 
-# --- Perform enhancement ---
-with st.spinner("Enhancing image, please wait..."):
-    try:
-        enhanced_np = enhancer.enhance(np.array(original))
-        enhanced = Image.fromarray(enhanced_np)
-    except Exception as e:
-        st.error(f"Enhancement error: {e}")
-        st.stop()
+    with st.spinner("✨ Enhancing—please wait..."):
+        out_np = enhancer.enhance(img_np)
+    out_img = Image.fromarray(out_np)
 
-# --- Show comparison ---
-st.subheader("Comparison")
-col1, col2 = st.columns(2)
-with col1:
-    st.image(original, caption="Original", use_column_width=True)
-with col2:
-    st.image(enhanced, caption="Enhanced", use_column_width=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("<div class='image-card image-card-left'>", unsafe_allow_html=True)
+        st.subheader("Original")
+        st.image(uploaded, width=width)
+        st.markdown("</div>", unsafe_allow_html=True)
+    with col2:
+        st.markdown("<div class='image-card image-card-right'>", unsafe_allow_html=True)
+        st.subheader("Enhanced")
+        st.image(out_img, width=width)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Download button ---
-buffer = io.BytesIO()
-enhanced.save(buffer, format="PNG")
-st.download_button(
-    label="Download Enhanced Image",
-    data=buffer.getvalue(),
-    file_name="friday_enhanced.png",
-    mime="image/png",
-    key="download_img"
-)
+    buf = io.BytesIO()
+    out_img.save(buf, format="PNG")
+    data = buf.getvalue()
+    st.markdown("<div class='download-btn'>", unsafe_allow_html=True)
+    st.download_button(
+        "⬇️ Download Enhanced",
+        data=data,
+        file_name="FRIDAY_enhanced.png",
+        mime="image/png"
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Method details ---
-if method == "gfpgan":
-    st.info("Portrait Retouch: Smooth skin, sharpen features while keeping a natural look.")
 else:
-    st.info("Advanced Restoration: Recover fine details and remove artifacts.")
-
-# --- Footer ---
-st.markdown("---")
-st.write("Powered by Streamlit, GFPGAN & RealESRGAN")
+    st.markdown("<div class='enhance-btn'>", unsafe_allow_html=True)
+    st.button("Enhance", help="Upload an image first", disabled=True)
+    st.markdown("</div>", unsafe_allow_html=True)
