@@ -4,6 +4,8 @@ from tqdm import tqdm
 import cv2
 import gdown
 import sys
+
+# Add libraries to path
 sys.path.insert(0, './libs/gfpgan')
 sys.path.insert(0, './libs/basicsr')
 
@@ -84,13 +86,12 @@ class Enhancer:
             self.arch = 'clean'
             self.channel_multiplier = 2
             self.model_name = 'GFPGANv1.4'
-            # your Google Drive file ID
             self.drive_id = "1Cw1Hx5m4b861xXsrP79-M26Zn6q9tmV7"
         elif method == 'RestoreFormer':
             self.arch = 'RestoreFormer'
             self.channel_multiplier = 2
             self.model_name = 'RestoreFormer'
-            self.drive_id = None  # you could swap in a different download link
+            self.drive_id = None
         elif method == 'codeformer':
             self.arch = 'CodeFormer'
             self.channel_multiplier = 2
@@ -101,28 +102,21 @@ class Enhancer:
 
         # ---------------------------------------------------
         # 3. Ensure the GFPGAN model is present locally:
-        #    - if drive_id set, download from Google Drive
-        #    - otherwise fallback to self.url or local checkpoint
         # ---------------------------------------------------
-        weights_dir = os.path.join('gfpgan', 'weights')
+        weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
 
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
         if self.drive_id:
-            # Download if missing
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from Google Drive...")
                 url = f"https://drive.google.com/uc?id={self.drive_id}"
                 gdown.download(url, local_path, quiet=False)
-        else:
-            # you could implement other logic here (e.g. use self.url)
-            pass
 
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
         # ---------------------------------------------------
-        from gfpgan import GFPGANer
         self.restorer = GFPGANer(
             model_path=local_path,
             upscale=upscale,
