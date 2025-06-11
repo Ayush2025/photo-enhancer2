@@ -78,6 +78,46 @@ st.sidebar.markdown("Made by **Ayush** 💡")
 if uploaded:
     img_np = np.array(Image.open(uploaded))
     enhance_key = method[1]
+
+    # Initialize Enhancer with error handling
+    try:
+        enhancer = Enhancer(
+            method=enhance_key,
+            background_enhancement=bg_enhance,
+            upscale=upscale
+        )
+    except Exception as e:
+        st.error(f"Initialization error in Enhancer: {e}")
+        st.stop()
+
+    with st.spinner("✨ Enhancing—please wait..."):
+        out_np = enhancer.enhance(img_np)
+    out_img = Image.fromarray(out_np)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Original 🖼️")
+        st.image(uploaded, width=width)
+    with col2:
+        st.subheader("Enhanced 🚀")
+        st.image(out_img, width=width)
+
+    buf = io.BytesIO()
+    out_img.save(buf, format="PNG")
+    btn = st.download_button(
+        "⬇️ Download Enhanced Image",
+        data=buf.getvalue(),
+        file_name="FRIDAY_enhanced.png",
+        mime="image/png"
+    )
+
+    # Method descriptions
+    if enhance_key == 'gfpgan':
+        st.info("**Portrait Retouch**: Smooths skin, sharpens facial features, keeps natural look.")
+    else:
+        st.info("**Advanced Restoration**: Recovers fine details, removes artifacts, restores old photos.")
+    img_np = np.array(Image.open(uploaded))
+    enhance_key = method[1]
     enhancer = Enhancer(
         method=enhance_key,
         background_enhancement=bg_enhance,
