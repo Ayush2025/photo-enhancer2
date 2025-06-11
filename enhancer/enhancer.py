@@ -37,7 +37,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=2,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'
+                            'https://github.com/xinntao/Real-ESRGAN/'  
                             'releases/download/v0.2.1/RealESRGAN_x2plus.pth'
                         ),
                         model=model,
@@ -65,7 +65,7 @@ class Enhancer:
                     self.bg_upsampler = RealESRGANer(
                         scale=4,
                         model_path=(
-                            'https://github.com/xinntao/Real-ESRGAN/'
+                            'https://github.com/xinntao/Real-ESRGAN/'  
                             'releases/download/v0.1.0/RealESRGAN_x4plus.pth'
                         ),
                         model=model,
@@ -106,18 +106,15 @@ class Enhancer:
         weights_dir = os.path.join('libs', 'gfpgan', 'weights')
         os.makedirs(weights_dir, exist_ok=True)
 
-        # default to a local file path
         local_path = os.path.join(weights_dir, f"{self.model_name}.pth")
 
         if self.drive_id:
-            # download GFPGANv1.4 from Drive if missing
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from Google Drive...")
                 url = f"https://drive.google.com/uc?id={self.drive_id}"
                 gdown.download(url, local_path, quiet=False)
             model_path = local_path
         else:
-            # for RestoreFormer & CodeFormer use official GitHub release URLs
             if self.model_name == 'RestoreFormer':
                 model_path = (
                     'https://github.com/TencentARC/GFPGAN/'
@@ -134,14 +131,13 @@ class Enhancer:
         # ---------------------------------------------------
         # 4. Lazy-import GFPGANer and create restorer
         # ---------------------------------------------------
-       self.restorer = GFPGANer(
-    model_path=model_path,
-    upscale=upscale,
-    arch=self.arch,
-    channel_multiplier=self.channel_multiplier,
-    bg_upsampler=self.bg_upsampler
-)
-
+        self.restorer = GFPGANer(
+            model_path=model_path,
+            upscale=upscale,
+            arch=self.arch,
+            channel_multiplier=self.channel_multiplier,
+            bg_upsampler=self.bg_upsampler
+        )
 
     def check_image_dimensions(self, image):
         h, w, _ = image.shape
