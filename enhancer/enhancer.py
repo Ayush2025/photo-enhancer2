@@ -93,11 +93,6 @@ class Enhancer:
             self.channel_multiplier = 2
             self.model_name = 'RestoreFormer'
             self.drive_id = None
-        elif method == 'codeformer':
-            self.arch = 'CodeFormer'
-            self.channel_multiplier = 2
-            self.model_name = 'CodeFormer'
-            self.drive_id = None
         else:
             raise ValueError(f'Wrong model version {method}.')
 
@@ -117,17 +112,11 @@ class Enhancer:
                 gdown.download(url, local_path, quiet=False)
             model_path = local_path
         else:
-            # For RestoreFormer and CodeFormer, download manually to local_path
-            if self.model_name == 'RestoreFormer':
-                url = (
-                    'https://github.com/TencentARC/GFPGAN/'
-                    'releases/download/v1.3.4/RestoreFormer.pth'
-                )
-            else:
-                url = (
-                    'https://github.com/TencentARC/GFPGAN/'
-                    'releases/download/v1.3.4/CodeFormer.pth'
-                )
+            # For RestoreFormer, download manually to local_path
+            url = (
+                'https://github.com/TencentARC/GFPGAN/'
+                'releases/download/v1.3.4/RestoreFormer.pth'
+            )
             if not os.path.isfile(local_path):
                 print(f"Downloading {self.model_name} from GitHub...")
                 resp = requests.get(url, stream=True)
