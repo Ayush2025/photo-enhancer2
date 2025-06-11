@@ -6,7 +6,7 @@ import streamlit as st
 from PIL import Image
 from enhancer.enhancer import Enhancer
 
-# --- Global exception handling ---
+# --- Wrap entire app to catch unexpected errors ---
 try:
     # --- Page config ---
     st.set_page_config(
@@ -63,11 +63,11 @@ try:
     # --- Sidebar controls ---
     st.sidebar.header("App Settings:")
     method = st.sidebar.selectbox(
-        "Enhancement Method", 
+        "Enhancement Method",
         [
             ("Portrait Retouch", "gfpgan"),
             ("Advanced Restoration", "RestoreFormer"),
-        ], 
+        ],
         format_func=lambda x: x[0]
     )
     bg_enhance = st.sidebar.checkbox("Background Enhancement", value=True)
@@ -81,7 +81,6 @@ try:
         img_np = np.array(Image.open(uploaded))
         enhance_key = method[1]
 
-        # Initialize Enhancer
         try:
             enhancer = Enhancer(
                 method=enhance_key,
@@ -98,8 +97,8 @@ try:
             except Exception as e:
                 st.error(f"Enhancement error: {e}")
                 st.stop()
-        out_img = Image.fromarray(out_np)
 
+        out_img = Image.fromarray(out_np)
         col1, col2 = st.columns(2)
         with col1:
             st.subheader("Original 🖼️")
